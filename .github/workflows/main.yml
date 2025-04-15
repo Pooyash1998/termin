@@ -31,4 +31,4 @@ jobs:
 
       - name: Run the script
         run: |
-          python your_script.py  # change this to your actual script filename
+          python check.py  # change this to your actual script filename
