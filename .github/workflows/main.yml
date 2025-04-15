@@ -3,7 +3,7 @@ name: Check Termin Availability
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'  # Runs every 30 minutes
+    - cron: '*/5 * * * *'  # Runs every 5 minutes
 
 jobs:
   check_termin:
@@ -18,17 +18,15 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install system dependencies (Chromium)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y chromium-browser
-          sudo ln -sf /usr/bin/chromium-browser /usr/bin/google-chrome || true
-
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Run the script
+        env:
+          DISPLAY: :99  # headless Chromium may expect a display
         run: |
-          python check.py  # change this to your actual script filename
+          which chromium-browser || which chromium
+          chromium-browser --version || chromium --version
+          python check.py  # change to your actual script filename
