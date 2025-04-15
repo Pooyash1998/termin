@@ -24,9 +24,5 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run the script
-        env:
-          DISPLAY: :99  # headless Chromium may expect a display
         run: |
-          which chromium-browser || which chromium
-          chromium-browser --version || chromium --version
           python check.py  # change to your actual script filename
