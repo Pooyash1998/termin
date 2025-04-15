@@ -18,6 +18,7 @@ driver = uc.Chrome(use_subprocess=True, options=options)
 wait = WebDriverWait(driver, 20)
 
 def check_termin():
+    termins_available = False
     try:
         url = "https://termine.staedteregion-aachen.de/auslaenderamt/select2?md=1"
         driver.get(url)
@@ -66,22 +67,24 @@ def check_termin():
             print("❌ No appointments available.")
         except:
             print("Appointment mat be available!")
+            termins_available = True
             book_any_termin()
 
     except Exception as e:
         print(f"❌ An unexpected error occurred: {e}")
     finally:
-        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
-        screenshot_path = f"final_screenshot_{timestamp}.png"
-        driver.save_screenshot(screenshot_path)
-        print(f"📸 Screenshot saved as {screenshot_path}")
-                # Send the screenshot to Telegram for manual verification
-        url_photo = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
-        with open(screenshot_path, 'rb') as photo:
-            requests.post(url_photo, data={
-                "chat_id": CHAT_ID,
-                "caption": "📋 Final page after booking attempt:"
-            }, files={"photo": photo})
+        if(termins_available):
+            timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
+            screenshot_path = f"final_screenshot_{timestamp}.png"
+            driver.save_screenshot(screenshot_path)
+            print(f"📸 Screenshot saved as {screenshot_path}")
+                    # Send the screenshot to Telegram for manual verification
+            url_photo = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
+            with open(screenshot_path, 'rb') as photo:
+                requests.post(url_photo, data={
+                    "chat_id": CHAT_ID,
+                    "caption": "📋 Final page after booking attempt:"
+                }, files={"photo": photo})
 
         driver.quit()
         print("🧹 Driver closed.")
