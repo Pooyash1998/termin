@@ -59,8 +59,10 @@ def home():
 
 if __name__ == "__main__":
     # Test Telegram on startup
-    send_telegram_message("Appointment bot started.")
-
+    try:
+        send_telegram_message("Appointment bot started.")
+    except Exception as e:
+        print("Starting appointment bot...",e)
     # Start background thread
     t = threading.Thread(target=appointment_loop, daemon=True)
     t.start()
