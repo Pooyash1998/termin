@@ -1,72 +1,52 @@
-from flask import Flask
+from typing import Final
 import requests
-import threading
-import time
+import telegram
 import os
-from termin import superc_termin  # your logic here
+from flask import Flask
+from flask_apscheduler import APScheduler
+from termin import superc_termin
 
-BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+CHAT_ID = os.environ.get("CHAT_ID")
+
+class Config:
+    SCHEDULER_API_ENABLED = True
 
 app = Flask(__name__)
+app.config.from_object(Config())
 
-def send_telegram_message(text: str):
-    if not BOT_TOKEN or not CHAT_ID:
-        print("Telegram config missing", flush=True)
-        return False
+scheduler = APScheduler()
+scheduler.init_app(app)
+scheduler.start()
 
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": CHAT_ID,
-        "text": text,
-        "parse_mode": "HTML"
-    }
-    try:
-        res = requests.post(url, data=payload)
-        print(f"Telegram send status: {res.status_code} - {res.text}", flush=True)
-        return res.ok
-    except Exception as e:
-        print(f"Error sending message: {e}", flush=True)
-        return False
+CHANNEL_ID: Final = '@aachen_termin'
+APPOINTMENT_LINK = 'https://termine.staedteregion-aachen.de/auslaenderamt/rsvchange?id=d5e73a2c-6e36-449b-b238-95819ba45b82'
+URL: Final = 'https://termin-y78y.onrender.com'
 
-def appointment_loop():
-    last_message = None
-    while True:
-        try:
-            success, result = superc_termin()
-            if success:
-                result += '\n\n<a href="https://termine.staedteregion-aachen.de/auslaenderamt/rsvchange?id=d5e73a2c-6e36-449b-b238-95819ba45b82">🔗 Change the Termin</a>'
-                if result != last_message:
-                    sent = send_telegram_message(result)
-                    if sent:
-                        print("Sent new appointment message.", flush=True)
-                        last_message = result
-                    else:
-                        print("Failed to send appointment message.", flush=True)
-                else:
-                    print("No new appointment updates, not sending message.", flush=True)
-            else:
-                print("No appointments available.", flush=True)
-            time.sleep(30)
-        except Exception as e:
-            print(f"Error in appointment loop: {e}", flush=True)
-            time.sleep(30)
+@app.route('/status')
+def status():    
+    return 'OK'
 
-started = False
+@app.route('/')
+def hello_world():    
+    return 'Hello, World!'
 
-@app.before_first_request
-def start_background_thread():
-    global started
-    if not started:
-        print("Starting appointment loop thread...", flush=True)
-        # Send a startup message once
-        send_telegram_message("Appointment bot started.")
-        t = threading.Thread(target=appointment_loop, daemon=True)
-        t.start()
-        started = True
+@scheduler.task('interval', id='do_job_1', seconds=60, misfire_grace_time=900)
+def job1():    
+    bot = telegram.Bot(token=BOT_TOKEN)
+    notify_aachen_termin(bot)
 
-@app.route("/")
-def home():
-    return "Service is running."
 
-# Note: No need for if __name__ == "__main__" when running under Gunicorn
+def notify_aachen_termin(bot: telegram.Bot):
+    for pos in [0]:
+        is_available, res = superc_termin(pos)
+        if is_available:            
+            text = f"{res}\n[🔥 Book Now\!]({APPOINTMENT_LINK})"
+            text = text.replace(".", "\.")
+            bot.send_message(chat_id=CHANNEL_ID, text=text, parse_mode='MarkdownV2')
+    
+@scheduler.task('interval', id='do_job_2', seconds=300, misfire_grace_time=900)
+def job2():
+    r = requests.get(f'{URL}/status')
+    print(r)
