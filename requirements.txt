@@ -3,3 +3,4 @@ selenium
 requests
 bs4
 flask
+gunicorn
