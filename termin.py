@@ -38,7 +38,7 @@ def format_url_2(soup: bs4.BeautifulSoup, needle: str, form_options_position: in
     :param needle: String to search for in a <h3></h3> element.
     :param form_options_position: Some options on the page have multiple elements (students / family / employees, for example)
     """
-    url_base = "https://termine.staedteregion-aachen.de/auslaenderamt/location?mdt=89&select_cnc=1"
+    url_base = "https://termine.staedteregion-aachen.de/auslaenderamt/location?mdt=94&select_cnc=1&cnc-299=0&cnc-300=0&cnc-293=0&cnc-296=0&cnc-297=0&cnc-313=0&cnc-284=0&cnc-315=0&cnc-312=0&cnc-317=0&cnc-310=0&cnc-283=0&cnc-329=0&cnc-309=0&cnc-287=0&cnc-286=1&cnc-289=0&cnc-292=0&cnc-332=0&cnc-330=0&cnc-331=0&cnc-311=0&cnc-327=0&cnc-335=0"
     header_element = soup.find("h3", string=lambda s: needle in s if s else False)
     if header_element:
         next_sibling = header_element.find_next_sibling()
@@ -83,10 +83,10 @@ def superc_termin(form_pos: int = 0):
         res_2 = session.get(url_2)
     else:
         return False, url_2
-
+    
     soup = bs4.BeautifulSoup(res_2.content, 'html.parser')
     loc = soup.find('input', {'name': 'loc'}).get('value')
-    logging.info(f'{"Super C loc: " + loc}')
+    #logging.info(f'{"Super C loc: " + loc}')
 
     payload = {'loc':str(loc), 'gps_lat': '55.77858', 'gps_long': '65.07867', 'select_location': 'Ausländeramt Aachen - Außenstelle RWTH auswählen'}
     res_3 = session.post(url_2, data=payload)
@@ -116,7 +116,7 @@ def superc_termin(form_pos: int = 0):
         else:
             logging.info(f'{"Cannot find sugg_accordion! Possible new appointments are available now in SuperC!"}')                
             return False, "Cannot find sugg_accordion! Possible new appointments are available now"
-    else:        
+    else:
         logging.info(f"No appointments available for {form_label} at SuperC")       
         return False, f"No available slots for {form_label} at this time"
 
